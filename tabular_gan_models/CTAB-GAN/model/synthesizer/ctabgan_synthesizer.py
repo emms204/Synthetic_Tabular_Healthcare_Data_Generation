@@ -567,7 +567,7 @@ class CTABGANSynthesizer:
                  random_dim=100,
                  num_channels=64,
                  l2scale=1e-5,
-                 batch_size=500,
+                 batch_size=300,
                  epochs=1):
                  
         self.random_dim = random_dim
@@ -603,6 +603,7 @@ class CTABGANSynthesizer:
         train_data = self.transformer.transform(train_data.values)
         # storing column size of the transformed training data
         data_dim = self.transformer.output_dim
+        print(f"DATA_DIM: {data_dim}")
         
         # initializing the sampler object to execute training-by-sampling 
         data_sampler = Sampler(train_data, self.transformer.output_info)
@@ -617,6 +618,7 @@ class CTABGANSynthesizer:
             if i * i >= col_size_d:
                 self.dside = i
                 break
+        print(f"DSIDE: {self.dside}")
         
         # obtaining the desired height/width for generating square images from the generator network that can be converted back to tabular domain 		
         sides = [4, 8, 16, 24, 32, 64, 128]
@@ -625,12 +627,15 @@ class CTABGANSynthesizer:
             if i * i >= col_size_g:
                 self.gside = i
                 break
+        print(f"GSIDE: {self.gside}")
 		
         # constructing the generator and discriminator networks
         layers_G = determine_layers_gen(self.gside, self.random_dim+self.cond_generator.n_opt, self.num_channels)
         layers_D = determine_layers_disc(self.dside, self.num_channels)
         self.generator = Generator(layers_G).to(self.device)
+        print(f"GENERATOR: \n{self.generator()}")
         discriminator = Discriminator(layers_D).to(self.device)
+        print(f"DISCRIMINATOR: \n{self.discriminator}")
         
         # assigning the respective optimizers for the generator and discriminator networks
         optimizer_params = dict(lr=2e-4, betas=(0.5, 0.9), eps=1e-3, weight_decay=self.l2scale)
@@ -646,6 +651,7 @@ class CTABGANSynthesizer:
             st_ed= get_st_ed(target_index,self.transformer.output_info)
             # configuring the classifier network and it's optimizer accordingly 
             classifier = Classifier(data_dim,self.class_dim,st_ed).to(self.device)
+            print(f"CLASSIFIER: \n{classifier}")
             optimizerC = optim.Adam(classifier.parameters(),**optimizer_params)
         
         # initializing learnable parameters of the discrimnator and generator networks  
@@ -658,12 +664,14 @@ class CTABGANSynthesizer:
         
         # initiating the training by computing the number of iterations per epoch
         steps_per_epoch = max(1, len(train_data) // self.batch_size)
+        print(f"steps_per_epoch: {steps_per_epoch}")
         for i in tqdm(range(self.epochs)):
             print("GOT YOU MODADUCKER, HELL YA")
             running_loss_G = 0
             running_loss_D = 0
             running_loss_C = 0
             ns = 0
+            step=0
             for _ in range(steps_per_epoch):
                 # sampling noise vectors using a standard normal distribution 
                 noisez = torch.randn(self.batch_size, self.random_dim, device=self.device)
@@ -800,9 +808,11 @@ class CTABGANSynthesizer:
                     loss_cg.backward()
                     optimizerG.step()
 
-                    print(f"Epoch {i+1}, Gen Loss: {g.item():.3f}, Crit Loss: {loss_d.item():.3f}",\
-				  f"CLF Loss: {loss_cc.item():.3f}")
-                    
+                    if (step + 1) % 15 == 0:
+                        print(f"Epoch {step+1}, Gen Loss: {g.item():.3f}, Crit Loss: {loss_d.item():.3f}",\
+                              f"CLF Loss: {loss_cc.item():.3f}")
+                    step += 1
+                        
             Train_Genloss = running_loss_G / ns
             Train_Critloss = running_loss_D / ns
             Train_CLFloss = running_loss_C / ns
