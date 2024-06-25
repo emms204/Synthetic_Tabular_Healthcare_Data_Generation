@@ -598,9 +598,11 @@ class CTABGANSynthesizer:
 
         # transforming pre-processed training data according to different data types 
         # i.e., mode specific normalisation for numeric and mixed columns and one-hot-encoding for categorical columns
+        print(train_data.columns, train_data.shape)
         self.transformer = DataTransformer(train_data=train_data, categorical_list=categorical, mixed_dict=mixed)
         self.transformer.fit() 
         train_data = self.transformer.transform(train_data.values)
+        print(f"train_data: \n{train_data}")
         # storing column size of the transformed training data
         data_dim = self.transformer.output_dim
         print(f"DATA_DIM: {data_dim}")
@@ -633,7 +635,7 @@ class CTABGANSynthesizer:
         layers_G = determine_layers_gen(self.gside, self.random_dim+self.cond_generator.n_opt, self.num_channels)
         layers_D = determine_layers_disc(self.dside, self.num_channels)
         self.generator = Generator(layers_G).to(self.device)
-        print(f"GENERATOR: \n{self.generator()}")
+        print(f"GENERATOR: \n{self.generator}")
         discriminator = Discriminator(layers_D).to(self.device)
         print(f"DISCRIMINATOR: \n{self.discriminator}")
         

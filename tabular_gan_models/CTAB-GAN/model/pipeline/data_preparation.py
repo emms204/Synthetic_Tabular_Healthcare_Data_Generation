@@ -47,6 +47,7 @@ class DataPrep(object):
 
         # Replacing empty strings with na if any and replace na with empty
         self.df = X_train_real
+        print(self.df.shape)
         self.df = self.df.replace(r' ', np.nan)
         self.df = self.df.fillna('empty')
         
