@@ -659,8 +659,11 @@ class CTABGANSynthesizer:
         # initiating the training by computing the number of iterations per epoch
         steps_per_epoch = max(1, len(train_data) // self.batch_size)
         for i in tqdm(range(self.epochs)):
-            for _ in range(steps_per_epoch):
-                
+			running_loss_G = 0
+            running_loss_D = 0
+            running_loss_C = 0
+            ns = 0
+			for _ in range(steps_per_epoch):
                 # sampling noise vectors using a standard normal distribution 
                 noisez = torch.randn(self.batch_size, self.random_dim, device=self.device)
                 # sampling conditional vectors 
@@ -709,6 +712,7 @@ class CTABGANSynthesizer:
                 self.loss_d.append(loss_d)
                 loss_d.backward()
                 # computing the backward step to update weights of the discriminator
+				running_loss_D += loss_d.item() * real.size(0)
                 optimizerD.step()
 
                 # similarly sample noise vectors and conditional vectors
@@ -742,6 +746,8 @@ class CTABGANSynthesizer:
                 # computing the loss to train the generator where we want y_fake to be close to 1 to fool the discriminator 
                 # and cross_entropy to be close to 0 to ensure generator's output matches the conditional vector  
                 g = -(torch.log(y_fake + 1e-4).mean()) + cross_entropy
+				running_loss_G += loss_g.item() * real.size(0)
+				ns += real.size(0)
                 self.loss_g.append(g)
                 # in order to backprop the gradient of separate losses w.r.t to the learnable weight of the network independently
                 # we may use retain_graph=True in backward() method in the first back-propagated loss 
@@ -775,6 +781,7 @@ class CTABGANSynthesizer:
                     # computing the loss to train the classifier so that it can perform well on the real data
                     loss_cc = c_loss(real_pre, real_label)
                     loss_cc.backward()
+					running_loss_C += loss_cc.item() * real.size(0)
                     optimizerC.step()
                     
                     # updating the weights of the generator
@@ -791,6 +798,12 @@ class CTABGANSynthesizer:
                     loss_cg = c_loss(fake_pre, fake_label)
                     loss_cg.backward()
                     optimizerG.step()
+					
+			Train_Genloss = running_loss_G / ns
+        	Train_Critloss = running_loss_D / ns
+        	Train_CLFloss = running_loss_C / ns
+        	print(f"Epoch {i+1}, Gen Loss: {Train_Genloss:.3f}, Crit Loss: {Train_Critloss:.3f}",\
+				  f"CLF Loss: {Train_CLFloss}")
                     
                             
     def sample(self, n):
