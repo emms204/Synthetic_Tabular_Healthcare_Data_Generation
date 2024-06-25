@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 import torch
-from sklearn.mixture import BayesianGaussianMixture
+from sklearn import mixture
 
 
 class DataTransformer():
@@ -90,8 +90,7 @@ class DataTransformer():
         for id_, info in enumerate(self.meta):
             if info['type'] == "continuous":
                 # fitting bgm model  
-                gm = BayesianGaussianMixture(
-                    self.n_clusters)
+                gm = mixture.GaussianMixture(n_components=self.n_clusters)
                 gm.fit(data[:, id_].reshape([-1, 1]))
                 model.append(gm)
                 # keeping only relevant modes that have higher weight than eps and are used to fit the data
