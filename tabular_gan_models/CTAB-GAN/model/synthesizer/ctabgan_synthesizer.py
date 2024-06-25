@@ -659,7 +659,8 @@ class CTABGANSynthesizer:
         # initiating the training by computing the number of iterations per epoch
         steps_per_epoch = max(1, len(train_data) // self.batch_size)
         for i in tqdm(range(self.epochs)):
-			running_loss_G = 0
+	    print("YOU DUCKER")
+	    running_loss_G = 0
             running_loss_D = 0
             running_loss_C = 0
             ns = 0
@@ -799,7 +800,7 @@ class CTABGANSynthesizer:
                     loss_cg.backward()
                     optimizerG.step()
 					
-			Train_Genloss = running_loss_G / ns
+	        Train_Genloss = running_loss_G / ns
         	Train_Critloss = running_loss_D / ns
         	Train_CLFloss = running_loss_C / ns
         	print(f"Epoch {i+1}, Gen Loss: {Train_Genloss:.3f}, Crit Loss: {Train_Critloss:.3f}",\
