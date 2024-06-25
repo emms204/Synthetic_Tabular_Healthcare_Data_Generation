@@ -799,6 +799,9 @@ class CTABGANSynthesizer:
                     loss_cg = c_loss(fake_pre, fake_label)
                     loss_cg.backward()
                     optimizerG.step()
+
+                    print(f"Epoch {i+1}, Gen Loss: {g.item():.3f}, Crit Loss: {loss_d.item():.3f}",\
+				  f"CLF Loss: {loss_cc.item():.3f}")
                     
             Train_Genloss = running_loss_G / ns
             Train_Critloss = running_loss_D / ns
